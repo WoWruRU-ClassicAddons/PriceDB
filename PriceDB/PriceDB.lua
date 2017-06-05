@@ -1,3 +1,13 @@
+if GetLocale() == "ruRU" then
+	SELLDB_MARK = SELLDB_MARK_RU;
+	SELLDB_LIST = SELLDB_LIST_RU;
+	SELLDB = SELLDB_RU;
+else
+	SELLDB_MARK = SELLDB_MARK_EN;
+	SELLDB_LIST = SELLDB_LIST_EN;
+	SELLDB = SELLDB_EN;
+end
+
 SELLDB_goodFrames = {
 	["ContainerFrameX"] = false,		---! Bags
 	["BankFrame"] = true,			---! Bank

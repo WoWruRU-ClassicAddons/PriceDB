@@ -1,5 +1,5 @@
-SELLDB_MARK = " of ";
-SELLDB_LIST = {
+SELLDB_MARK_EN = " of ";
+SELLDB_LIST_EN = {
 	" of Agility",
 	" of Arcane Resistance",
 	" of Arcane Wrath",
@@ -49,7 +49,7 @@ SELLDB_LIST = {
 	" of Nature Protection",
 	" of Shadow Protection",
 }
-SELLDB = {
+SELLDB_EN = {
 	["Worn Shortsword"] = 7,
 	["Bent Staff"] = 9,
 	["Worn Mace"] = 7,

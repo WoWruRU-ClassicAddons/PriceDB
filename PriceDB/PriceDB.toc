@@ -1,4 +1,5 @@
 ﻿## Interface:11200
 ## Title:|cFF007777PriceDB |cFF777777$1.12 |cFF777700v1.4 |cFF770000Bonho Maus !!Xii|r
 ## Notes: Item price DB
+## Notes-ruRU: Отображает цену предмета за которую вы можете продать его торговцу
 PriceDB.xml

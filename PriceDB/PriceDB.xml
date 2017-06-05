@@ -1,5 +1,6 @@
 <Ui>
 	<Script file="SellDBen.lua"/>
+	<Script file="SellDBru.lua"/>
 	<Script file="PriceDB.lua"/>
 	<GameTooltip name="SellValue_Tooltip" inherits="GameTooltipTemplate" parent="UIParent" hidden="true">
 		<Layers>
