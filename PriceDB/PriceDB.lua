@@ -1,87 +1,173 @@
+PriceDB = CreateFrame("Frame", nil, UIParent)
+PriceDB:RegisterEvent("ADDON_LOADED")
+
+PriceDB.sellvalue = CreateFrame("Frame" , "PriceDBGameTooltip", GameTooltip)
+
 if GetLocale() == "ruRU" then
-	SELLDB_MARK = SELLDB_MARK_RU;
-	SELLDB_LIST = SELLDB_LIST_RU;
-	SELLDB = SELLDB_RU;
+	PriceDB_Sell = "Продажа"
+	PriceDB_Buy = "Покупка"
 else
-	SELLDB_MARK = SELLDB_MARK_EN;
-	SELLDB_LIST = SELLDB_LIST_EN;
-	SELLDB = SELLDB_EN;
+	PriceDB_Sell = "Sell"
+	PriceDB_Buy = "Buy"
 end
 
-SELLDB_goodFrames = {
-	["ContainerFrameX"] = false,		---! Bags
-	["BankFrame"] = true,			---! Bank
-	["LootFrame"] = true,			---! Loot
-	["PaperDollFrame"] = true,		---! Equip
-	["InspectPaperDollFrame"] = true,	---! Inspect
-	["TradePlayerItemX"] = true,		---! TradeOut
-	["TradeRecipientItemX"] = true,		---! TradeIn
-	["MailItemX"] = true,			---! MailGetList
-	["OpenMailFrame"] = true,		---! MailGet
-	["SendMailFrame"] = true,		---! MailSend
-	["BrowseButtonX"] = true,		---! AuctionList
-	["BidButtonX"] = true,			---! AuctionRate
-	["AuctionFrameAuctions"] = true,	---! AuctionSell
-	["AuctionsButtonX"] = true,		---! AuctionSellList
-	["TradeSkillDetailScrollChildFrame"] = true,	---! Craft
----!	["ClassTrainerDetailScrollChildFrame"] = true,	---! CraftTrain
-	["TextAlphaDependentFrame"] = true,		---! QuestGet
-	["QuestProgressScrollChildFrame"] = true,	---! QuestProgress
-	["QuestRewardScrollChildFrame"] = true,		---! QuestReward
-	["QuestLogDetailScrollChildFrame"] = true,	---! QuestLog
-	["EQLX_QuestLogDetailScrollChildFrame"] = true,	---! QuestLog_EQL3
-};
+PriceDB.sellvalue:SetScript("OnHide", function()
+    GameTooltip.itemLink = nil
+    GameTooltip.itemCount = nil
+end)
 
-function SellValue_OnHide()
-	this = this:GetParent();
-	return GameTooltip_ClearMoney();
-end
-
-function SellValue_OnShow()
-	local function SetTooltipMoney(frame, money)
-		frame:AddLine(SALE_PRICE_COLON, 0.55, 0.55, 0.55);
-		local lastLines = getglobal("GameTooltipTextLeft"..frame:NumLines());
-		local frameWidth = lastLines:GetWidth()+9;
-		local moneyFrame = GameTooltipMoneyFrame;
-		moneyFrame:SetPoint("LEFT", lastLines, "RIGHT", 2, 0);
-		moneyFrame:Show();
-		MoneyFrame_Update(moneyFrame:GetName(), money);
-		frame:SetHeight(moneyFrame:GetHeight()+frame:GetHeight());
-		frame:SetMinimumWidth(moneyFrame:GetWidth()+frameWidth-20);
-		if (frame:GetWidth() < moneyFrame:GetWidth()+frameWidth) then
-			frame:SetWidth(moneyFrame:GetWidth()+frameWidth);
-		end
-	end
-	local function GetMouseFocusParent()
-		return GetMouseFocus():GetParent();
-	end
-	local pcallOK, parentFrame = pcall(GetMouseFocusParent);
-	if parentFrame and pcallOK then
-		local showMoney = SELLDB_goodFrames[string.gsub(parentFrame:GetName(), "%d+", "X")];
-  		if (showMoney or (showMoney == not not MerchantFrame:IsVisible())) and not InRepairMode() then
- 			if GameTooltipTextLeft1 then
-				local itemName = GameTooltipTextLeft1:GetText();
-				local itemShortName = SellValue_ShortenItemName(itemName);
-				local price = nil;
-				if SELLDB[itemShortName] then
-					price = SELLDB[itemShortName];
+PriceDB.sellvalue:SetScript("OnShow", function()
+    if GameTooltip.itemLink then
+		local _, _, itemID = string.find(GameTooltip.itemLink, "item:(%d+):%d+:%d+:%d+")
+		local itemID = tonumber(itemID)
+		local count = GameTooltip.itemCount or 1
+		
+		if SellData[itemID] then
+			local _, _, sell, buy = strfind(SellData[itemID], "(.*),(.*)")
+			sell = tonumber(sell)
+			buy = tonumber(buy)
+			
+			if not MerchantFrame:IsShown() then
+				if sell > 0 then PriceDB:SetTooltipMoney(GameTooltip, sell*count) end
+			end
+			if IsShiftKeyDown() then
+				GameTooltip:AddLine(" ")
+				
+				if count > 1 then
+					GameTooltip:AddDoubleLine(PriceDB_Sell..":", PriceDB:CreateGoldString(sell).."|cff555555  //  "..PriceDB:CreateGoldString(sell*count), 1, 1, 1)
+				else
+					GameTooltip:AddDoubleLine(PriceDB_Sell..":", PriceDB:CreateGoldString(sell*count), 1, 1, 1)
 				end
-				if price then
-					SetTooltipMoney(GameTooltip, price);
+				
+				if count > 1 then
+					GameTooltip:AddDoubleLine(PriceDB_Buy..":", PriceDB:CreateGoldString(buy).."|cff555555  //  "..PriceDB:CreateGoldString(buy*count), 1, 1, 1)
+				else
+					GameTooltip:AddDoubleLine(PriceDB_Buy..":", PriceDB:CreateGoldString(buy), 1, 1, 1)
 				end
 			end
+			GameTooltip:Show()
 		end
 	end
+end)
+
+function PriceDB:SetTooltipMoney(frame, money)
+	frame:AddLine(SALE_PRICE_COLON.." ", 1.0, 1.0, 1.0)
+	local numLines = frame:NumLines()
+	local moneyFrame = getglobal(frame:GetName().."MoneyFrame")
+	moneyFrame:SetPoint("LEFT", frame:GetName().."TextLeft"..numLines, "RIGHT", 4, 0)
+	moneyFrame:Show()
+	MoneyFrame_Update(moneyFrame:GetName(), money)
+	frame:SetMinimumWidth(moneyFrame:GetWidth())
 end
 
-function SellValue_ShortenItemName(itemName)
-	local ofPos = string.find(itemName, SELLDB_MARK);
-	if ofPos then
-		for i = 1, table.getn(SELLDB_LIST) do
-			if string.find(itemName, SELLDB_LIST[i]) then
-				return string.sub(itemName, 1, ofPos-1);
-			end
-		end
+function PriceDB:CreateGoldString(money)
+	local gold = floor(money/ 100 / 100)
+	local silver = floor(mod((money/100),100))
+	local copper = floor(mod(money,100))
+	
+	local string = ""
+	if gold > 0 then string = string .. "|cffffffff" .. gold .. "|cffffd700g" end
+	if silver > 0 then string = string .. "|cffffffff " .. silver .. "|cffc7c7cfs" end
+	string = string .. "|cffffffff " .. copper .. "|cffeda55fc"
+	
+	return string
+end
+
+local PriceDBHookSetBagItem = GameTooltip.SetBagItem
+function GameTooltip.SetBagItem(PriceDB, container, slot)
+    GameTooltip.itemLink = GetContainerItemLink(container, slot)
+    _, GameTooltip.itemCount = GetContainerItemInfo(container, slot)
+    return PriceDBHookSetBagItem(PriceDB, container, slot)
+end
+
+local PriceDBHookSetQuestLogItem = GameTooltip.SetQuestLogItem
+function GameTooltip.SetQuestLogItem(PriceDB, itemType, index)
+    GameTooltip.itemLink = GetQuestLogItemLink(itemType, index)
+    if not GameTooltip.itemLink then return end
+    return PriceDBHookSetQuestLogItem(PriceDB, itemType, index)
+end
+
+local PriceDBHookSetQuestItem = GameTooltip.SetQuestItem
+function GameTooltip.SetQuestItem(PriceDB, itemType, index)
+    GameTooltip.itemLink = GetQuestItemLink(itemType, index)
+    return PriceDBHookSetQuestItem(PriceDB, itemType, index)
+end
+
+local PriceDBHookSetLootItem = GameTooltip.SetLootItem
+function GameTooltip.SetLootItem(PriceDB, slot)
+    GameTooltip.itemLink = GetLootSlotLink(slot)
+    PriceDBHookSetLootItem(PriceDB, slot)
+end
+
+local PriceDBHookSetInboxItem = GameTooltip.SetInboxItem
+function GameTooltip.SetInboxItem(PriceDB, mailID, attachmentIndex)
+    local itemName, itemTexture, inboxItemCount, inboxItemQuality = GetInboxItem(mailID)
+    GameTooltip.itemLink = GetItemLinkByName(itemName)
+    return PriceDBHookSetInboxItem(PriceDB, mailID, attachmentIndex)
+end
+
+local PriceDBHookSetInventoryItem = GameTooltip.SetInventoryItem
+function GameTooltip.SetInventoryItem(PriceDB, unit, slot)
+    GameTooltip.itemLink = GetInventoryItemLink(unit, slot)
+    return PriceDBHookSetInventoryItem(PriceDB, unit, slot)
+end
+
+local PriceDBHookSetLootRollItem = GameTooltip.SetLootRollItem
+function GameTooltip.SetLootRollItem(PriceDB, id)
+    GameTooltip.itemLink = GetLootRollItemLink(id)
+    return PriceDBHookSetLootRollItem(PriceDB, id)
+end
+
+local PriceDBHookSetLootRollItem = GameTooltip.SetLootRollItem
+function GameTooltip.SetLootRollItem(PriceDB, id)
+    GameTooltip.itemLink = GetLootRollItemLink(id)
+    return PriceDBHookSetLootRollItem(PriceDB, id)
+end
+
+local PriceDBHookSetMerchantItem = GameTooltip.SetMerchantItem
+function GameTooltip.SetMerchantItem(PriceDB, merchantIndex)
+    GameTooltip.itemLink = GetMerchantItemLink(merchantIndex)
+    return PriceDBHookSetMerchantItem(PriceDB, merchantIndex)
+end
+
+local PriceDBHookSetCraftItem = GameTooltip.SetCraftItem
+function GameTooltip.SetCraftItem(PriceDB, skill, slot)
+    GameTooltip.itemLink = GetCraftReagentItemLink(skill, slot)
+    return PriceDBHookSetCraftItem(PriceDB, skill, slot)
+end
+
+local PriceDBHookSetCraftSpell = GameTooltip.SetCraftSpell
+function GameTooltip.SetCraftSpell(PriceDB, slot)
+    GameTooltip.itemLink = GetCraftItemLink(slot)
+    return PriceDBHookSetCraftSpell(PriceDB, slot)
+end
+
+local PriceDBHookSetTradeSkillItem = GameTooltip.SetTradeSkillItem
+function GameTooltip.SetTradeSkillItem(PriceDB, skillIndex, reagentIndex)
+    if reagentIndex then
+		GameTooltip.itemLink = GetTradeSkillReagentItemLink(skillIndex, reagentIndex)
+	else
+		GameTooltip.itemLink = GetTradeSkillItemLink(skillIndex)
 	end
-	return itemName;
+    return PriceDBHookSetTradeSkillItem(PriceDB, skillIndex, reagentIndex)
+end
+
+local PriceDBHookSetAuctionSellItem = GameTooltip.SetAuctionSellItem
+function GameTooltip.SetAuctionSellItem(PriceDB)
+    local itemName, _, itemCount = GetAuctionSellItemInfo()
+    GameTooltip.itemCount = itemCount
+    GameTooltip.itemLink = GetItemLinkByName(itemName)
+    return PriceDBHookSetAuctionSellItem(PriceDB)
+end
+
+local PriceDBHookSetTradePlayerItem = GameTooltip.SetTradePlayerItem
+function GameTooltip.SetTradePlayerItem(PriceDB, index)
+    GameTooltip.itemLink = GetTradePlayerItemLink(index)
+    return PriceDBHookSetTradePlayerItem(PriceDB, index)
+end
+
+local PriceDBHookSetTradeTargetItem = GameTooltip.SetTradeTargetItem
+function GameTooltip.SetTradeTargetItem(PriceDB, index)
+    GameTooltip.itemLink = GetTradeTargetItemLink(index)
+    return PriceDBHookSetTradeTargetItem(PriceDB, index)
 end
