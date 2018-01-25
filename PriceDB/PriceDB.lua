@@ -73,6 +73,16 @@ function PriceDB:CreateGoldString(money)
 	return string
 end
 
+local function GetItemLinkByName(name)
+	for itemID = 1, 25818 do
+		local itemName, hyperLink, itemQuality = GetItemInfo(itemID)
+		if (itemName and itemName == name) then
+			local _, _, _, hex = GetItemQualityColor(tonumber(itemQuality))
+			return hex.. "|H"..hyperLink.."|h["..itemName.."]|h|r"
+		end
+	end
+end
+
 local PriceDBHookSetBagItem = GameTooltip.SetBagItem
 function GameTooltip.SetBagItem(PriceDB, container, slot)
     GameTooltip.itemLink = GetContainerItemLink(container, slot)
