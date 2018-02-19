@@ -1,8 +1,8 @@
 ﻿## Interface:11200
-## Title:|cFF007777PriceDB v1.5|r
+## Title:|cFF007777PriceDB v1.6|r
 ## Notes: Item price DB
 ## Notes-ruRU: Отображает цену предмета за которую вы можете продать его торговцу
-## Version: 1.5
+## Version: 1.6
 
 PriceDB.lua
 Data.lua
